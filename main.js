@@ -1,4 +1,11 @@
-const { app, BrowserWindow, ipcMain, dialog, session } = require("electron");
+const {
+  app,
+  BrowserWindow,
+  ipcMain,
+  dialog,
+  session,
+  shell,
+} = require("electron");
 const path = require("path");
 const fs = require("fs");
 const bcrypt = require("bcryptjs");
@@ -853,3 +860,15 @@ ipcMain.handle(
     }
   }
 );
+
+// Handle opening URLs in browser
+ipcMain.handle("open-external-url", (event, url) => {
+  if (
+    typeof url === "string" &&
+    (url.startsWith("http://") || url.startsWith("https://"))
+  ) {
+    shell.openExternal(url);
+    return true;
+  }
+  return false;
+});

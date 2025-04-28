@@ -36,6 +36,9 @@ contextBridge.exposeInMainWorld("api", {
   changeVaultPath: () => ipcRenderer.invoke("change-vault-path"),
   getCurrentVaultPath: () => ipcRenderer.invoke("get-current-vault-path"),
 
+  // External links
+  openExternalUrl: (url) => ipcRenderer.invoke("open-external-url", url),
+
   // Authentication
   logout: () => ipcRenderer.invoke("logout"),
 });

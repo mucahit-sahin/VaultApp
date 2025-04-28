@@ -1801,6 +1801,7 @@ document.addEventListener("DOMContentLoaded", () => {
       settingsModal = document.createElement("div");
       settingsModal.id = "settings-modal";
       settingsModal.className = "modal";
+      settingsModal.style.display = "none";
 
       // Create modal content
       const modalContent = document.createElement("div");
@@ -1874,6 +1875,31 @@ document.addEventListener("DOMContentLoaded", () => {
       vaultPathGroup.appendChild(vaultPathDescription);
       vaultPathGroup.appendChild(vaultPathContainer);
 
+      // GitHub Link
+      const githubGroup = document.createElement("div");
+      githubGroup.className = "form-group github-section";
+
+      const githubLabel = document.createElement("label");
+      githubLabel.textContent = "Project Repository:";
+
+      const githubLink = document.createElement("a");
+      githubLink.href = "#";
+      githubLink.className = "github-link";
+      githubLink.textContent = "VaultApp on GitHub";
+      githubLink.addEventListener("click", (e) => {
+        e.preventDefault();
+        window.api.openExternalUrl("https://github.com/mucahit-sahin/VaultApp");
+      });
+
+      // GitHub icon
+      const githubIcon = document.createElement("span");
+      githubIcon.className = "github-icon";
+      githubIcon.innerHTML = "★"; // Simple star icon instead of FontAwesome
+
+      githubLink.prepend(githubIcon);
+      githubGroup.appendChild(githubLabel);
+      githubGroup.appendChild(githubLink);
+
       // Form actions
       const formActions = document.createElement("div");
       formActions.className = "form-actions";
@@ -1898,6 +1924,7 @@ document.addEventListener("DOMContentLoaded", () => {
       // Assemble form
       settingsForm.appendChild(intervalGroup);
       settingsForm.appendChild(vaultPathGroup);
+      settingsForm.appendChild(githubGroup);
       settingsForm.appendChild(formActions);
 
       // Assemble modal content

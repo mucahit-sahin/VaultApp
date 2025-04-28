@@ -951,18 +951,26 @@ body.selection-mode .folder-item {
 
 /* Settings modal */
 .settings-modal-content {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   width: 90%;
   max-width: 500px;
   max-height: 90vh;
   background-color: var(--bg-secondary);
   padding: 20px;
   border-radius: 8px;
+  box-shadow: 0 5px 15px var(--shadow-color);
+  overflow-y: auto;
+  z-index: 1100;
 }
 
 .settings-modal-content h3 {
   margin: 0 0 20px 0;
   color: var(--text-primary);
   font-size: 20px;
+  text-align: center;
 }
 
 /* Setting description */
@@ -1060,4 +1068,45 @@ body.selection-mode .folder-item {
   left: 0;
   z-index: 1;
   animation: pulse 1.5s infinite alternate;
+}
+
+/* GitHub section in settings */
+.github-section {
+  margin-top: 25px;
+  padding-top: 15px;
+  border-top: 1px solid var(--border-color);
+}
+
+.github-link {
+  display: flex;
+  align-items: center;
+  margin-top: 8px;
+  padding: 10px 15px;
+  background-color: #24292e;
+  color: white;
+  border-radius: 4px;
+  text-decoration: none;
+  font-weight: 500;
+  transition: background-color 0.3s, transform 0.2s;
+  width: fit-content;
+}
+
+.github-link:hover {
+  background-color: #2c3338;
+  transform: translateY(-2px);
+}
+
+.github-icon {
+  margin-right: 10px;
+  font-size: 18px;
+}
+
+/* For dark mode */
+.dark-mode .github-link {
+  background-color: #333;
+  color: #f0f0f0;
+}
+
+.dark-mode .github-link:hover {
+  background-color: #444;
 }
