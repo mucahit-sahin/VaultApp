@@ -1,0 +1,30 @@
+{
+  "name": "vaultapp",
+  "version": "1.0.0",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron .",
+    "build": "electron-builder"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "A secure app to store photos and videos behind PIN protection",
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "crypto-js": "^4.2.0",
+    "electron": "^35.2.1",
+    "electron-builder": "^26.0.12"
+  },
+  "build": {
+    "appId": "com.vaultapp",
+    "productName": "Vault App",
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": "nsis"
+    }
+  }
+}

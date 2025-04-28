@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vault App</title>
+  <link rel="stylesheet" href="styles/main.css">
+</head>
+<body>
+  <header class="main-header">
+    <h1>Vault App</h1>
+    <div class="header-actions">
+      <button id="theme-toggle" class="btn secondary-btn theme-toggle">
+        <span class="theme-toggle-icon">🌙</span>
+      </button>
+      <button id="import-btn" class="btn action-btn">Import Media</button>
+      <button id="create-folder-btn" class="btn primary-btn">Create Folder</button>
+      <button id="select-mode-btn" class="btn secondary-btn">Select Items</button>
+      <button id="logout-btn" class="btn secondary-btn">Logout</button>
+    </div>
+  </header>
+
+  <main class="main-container">
+    <div class="navigation-bar">
+      <div id="current-path-container">
+        <button id="back-btn" class="btn secondary-btn" style="display: none;">Back</button>
+        <div id="current-folder-path" class="current-folder-path">All Media</div>
+      </div>
+      <div class="filter-bar">
+        <div class="view-options">
+          <button id="view-all" class="view-btn active">All</button>
+          <button id="view-images" class="view-btn">Images</button>
+          <button id="view-videos" class="view-btn">Videos</button>
+        </div>
+        <input type="text" id="search-input" placeholder="Search media..." class="search-input">
+      </div>
+    </div>
+
+    <!-- Selection actions bar (hidden by default) -->
+    <div id="selection-actions" class="selection-actions" style="display: none;">
+      <span id="selected-count" class="selected-count">0 items selected</span>
+      <div class="selection-buttons">
+        <button id="move-to-folder-btn" class="btn action-btn">Move to Folder</button>
+        <button id="delete-selected-btn" class="btn danger-btn">Delete Selected</button>
+        <button id="cancel-selection-btn" class="btn secondary-btn">Cancel</button>
+      </div>
+    </div>
+
+    <div id="media-container" class="media-container">
+      <!-- Media items and folders will be displayed here -->
+      <div id="empty-state" class="empty-state">
+        <p>No media files in your vault.</p>
+        <p>Click "Import Media" to add photos and videos.</p>
+      </div>
+    </div>
+
+    <!-- Media viewer modal -->
+    <div id="media-modal" class="modal">
+      <div class="modal-content">
+        <span class="close-modal">&times;</span>
+        <div id="media-viewer" class="media-viewer">
+          <!-- Media will be displayed here -->
+        </div>
+        <!-- Delete button and controls will be added dynamically -->
+      </div>
+    </div>
+
+    <!-- Create folder modal -->
+    <div id="folder-modal" class="modal">
+      <div class="modal-content" style="max-width: 400px;">
+        <span class="close-folder-modal">&times;</span>
+        <h3>Create New Folder</h3>
+        <form id="folder-form" onsubmit="return false;">
+          <div class="form-group">
+            <label for="folder-name">Folder Name</label>
+            <input type="text" id="folder-name" class="form-input" placeholder="Enter folder name" autocomplete="off">
+          </div>
+          <div class="form-actions">
+            <button id="save-folder-btn" class="btn action-btn" type="submit">Create</button>
+            <button id="cancel-folder-btn" class="btn secondary-btn" type="button">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+    
+    <!-- Move to folder modal -->
+    <div id="move-modal" class="modal">
+      <div class="modal-content" style="max-width: 400px;">
+        <span class="close-move-modal">&times;</span>
+        <h3>Move to Folder</h3>
+        <div class="folder-list-container">
+          <div id="destination-folders" class="destination-folders">
+            <!-- Folders will be listed here -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="js/index.js"></script>
+</body>
+</html> 

@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vault App - Setup</title>
+  <link rel="stylesheet" href="styles/main.css">
+</head>
+<body>
+  <div class="auth-container">
+    <div class="auth-box">
+      <h2>Welcome to Vault App</h2>
+      <p>Create a PIN to secure your vault</p>
+      
+      <div class="pin-container">
+        <input type="password" id="pin" maxlength="6" placeholder="Enter PIN (4-6 digits)" class="pin-input">
+        <input type="password" id="confirm-pin" maxlength="6" placeholder="Confirm PIN" class="pin-input">
+      </div>
+      
+      <div id="error-message" class="error-message"></div>
+      
+      <button id="setup-btn" class="btn primary-btn">Create PIN</button>
+    </div>
+  </div>
+
+  <script src="js/setup.js"></script>
+</body>
+</html> 
