@@ -56,6 +56,10 @@ document.addEventListener("DOMContentLoaded", () => {
   let selectedItems = []; // Track selected items
   let darkMode = localStorage.getItem("darkMode") === "enabled"; // Track theme preference
 
+  // Gallery keyboard navigation state
+  let focusedItemIndex = -1; // Track currently focused item
+  let galleryItems = []; // Keep track of all items in the gallery for keyboard navigation
+
   // Slideshow state
   let slideshowInterval = localStorage.getItem("slideshowInterval") || 3000; // Default 3 seconds
   let slideshowTimer = null;
@@ -112,6 +116,9 @@ document.addEventListener("DOMContentLoaded", () => {
       // Update display after both operations are complete
       updateMediaDisplay();
       setupEventListeners();
+
+      // Update button labels to show shortcuts
+      updateButtonLabels();
 
       // Add settings button to main header
       addSettingsButton();
@@ -253,17 +260,7 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     }
 
-    // Prevent event propagation on modal content
-    const mediaModalContent = document.querySelector(
-      "#media-modal .modal-content"
-    );
-    if (mediaModalContent) {
-      mediaModalContent.addEventListener("click", (event) => {
-        event.stopPropagation();
-      });
-    }
-
-    // Delete media
+    // Delete media button
     if (deleteMediaBtn) {
       deleteMediaBtn.addEventListener("click", handleDeleteMedia);
     }
@@ -273,40 +270,10 @@ document.addEventListener("DOMContentLoaded", () => {
       backBtn.addEventListener("click", handleBackButton);
     }
 
-    // Folder modal controls
+    // Folder Modal controls
     if (closeFolderModal && cancelFolderBtn) {
       closeFolderModal.addEventListener("click", closeFolderModalHandler);
       cancelFolderBtn.addEventListener("click", closeFolderModalHandler);
-    }
-
-    // Prevent event propagation on folder modal content
-    const folderModalContent = document.querySelector(
-      "#folder-modal .modal-content"
-    );
-    if (folderModalContent) {
-      folderModalContent.addEventListener("click", (event) => {
-        event.stopPropagation();
-      });
-    }
-
-    // Move modal controls
-    if (closeMoveModal && moveModal) {
-      closeMoveModal.addEventListener("click", closeMoveModalHandler);
-      moveModal.addEventListener("click", (event) => {
-        if (event.target === moveModal) {
-          closeMoveModalHandler();
-        }
-      });
-    }
-
-    // Prevent event propagation on move modal content
-    const moveModalContent = document.querySelector(
-      "#move-modal .modal-content"
-    );
-    if (moveModalContent) {
-      moveModalContent.addEventListener("click", (event) => {
-        event.stopPropagation();
-      });
     }
 
     // Form submission
@@ -337,6 +304,187 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       });
     }
+
+    // Move modal controls
+    if (closeMoveModal && moveModal) {
+      closeMoveModal.addEventListener("click", closeMoveModalHandler);
+      moveModal.addEventListener("click", (event) => {
+        if (event.target === moveModal) {
+          closeMoveModalHandler();
+        }
+      });
+    }
+
+    // ESC key to close modals
+    document.addEventListener("keydown", handleModalKeyEvents);
+
+    // Keyboard shortcuts for main gallery navigation
+    document.addEventListener("keydown", handleGalleryKeyNavigation);
+
+    // Keyboard shortcuts for application actions
+    document.addEventListener("keydown", handleAppShortcuts);
+
+    // Ensure initial focus is set in the gallery
+    setupGalleryFocus();
+  };
+
+  // Create settings modal
+  const createSettingsModal = () => {
+    // Check if the modal already exists
+    if (document.getElementById("settings-modal")) {
+      return;
+    }
+
+    // Create the modal
+    settingsModal = document.createElement("div");
+    settingsModal.id = "settings-modal";
+    settingsModal.className = "modal";
+
+    // Create the modal content
+    const modalContent = document.createElement("div");
+    modalContent.className = "settings-modal-content";
+
+    // Add modal title
+    const modalTitle = document.createElement("h3");
+    modalTitle.textContent = "Settings";
+    modalContent.appendChild(modalTitle);
+
+    // Add close button
+    closeSettingsModal = document.createElement("span");
+    closeSettingsModal.className = "close-modal";
+    closeSettingsModal.innerHTML = "&times;";
+    closeSettingsModal.addEventListener("click", closeSettingsModalHandler);
+    modalContent.appendChild(closeSettingsModal);
+
+    // Create settings form
+    const settingsForm = document.createElement("form");
+    settingsForm.id = "settings-form";
+    settingsForm.addEventListener("submit", (e) => e.preventDefault());
+
+    // Add interval setting
+    const intervalGroup = document.createElement("div");
+    intervalGroup.className = "form-group";
+
+    const intervalLabel = document.createElement("label");
+    intervalLabel.htmlFor = "slideshow-interval";
+    intervalLabel.textContent = "Slideshow Interval (seconds):";
+
+    slideshowIntervalInput = document.createElement("input");
+    slideshowIntervalInput.type = "number";
+    slideshowIntervalInput.id = "slideshow-interval";
+    slideshowIntervalInput.className = "form-input";
+    slideshowIntervalInput.min = "1";
+    slideshowIntervalInput.max = "60";
+    slideshowIntervalInput.step = "1";
+    slideshowIntervalInput.value = slideshowInterval / 1000;
+
+    intervalGroup.appendChild(intervalLabel);
+    intervalGroup.appendChild(slideshowIntervalInput);
+
+    // Add vault path setting
+    const vaultPathGroup = document.createElement("div");
+    vaultPathGroup.className = "form-group";
+
+    const vaultPathLabel = document.createElement("label");
+    vaultPathLabel.textContent = "Encrypted Files Location:";
+
+    const vaultPathDescription = document.createElement("p");
+    vaultPathDescription.className = "setting-description";
+    vaultPathDescription.textContent =
+      "Files will be stored in a 'Vault' folder at the selected location.";
+
+    const vaultPathContainer = document.createElement("div");
+    vaultPathContainer.className = "vault-path-container";
+
+    currentVaultPathDisplay = document.createElement("div");
+    currentVaultPathDisplay.className = "vault-path-display";
+    currentVaultPathDisplay.textContent = "Loading...";
+
+    const changeVaultPathBtn = document.createElement("button");
+    changeVaultPathBtn.type = "button";
+    changeVaultPathBtn.className = "btn secondary-btn";
+    changeVaultPathBtn.textContent = "Change";
+    changeVaultPathBtn.addEventListener("click", handleChangeVaultPath);
+
+    vaultPathContainer.appendChild(currentVaultPathDisplay);
+    vaultPathContainer.appendChild(changeVaultPathBtn);
+
+    vaultPathGroup.appendChild(vaultPathLabel);
+    vaultPathGroup.appendChild(vaultPathDescription);
+    vaultPathGroup.appendChild(vaultPathContainer);
+
+    // Add GitHub link
+    const githubGroup = document.createElement("div");
+    githubGroup.className = "form-group github-section";
+
+    const githubLabel = document.createElement("label");
+    githubLabel.textContent = "Project Repository:";
+
+    const githubLink = document.createElement("a");
+    githubLink.href = "#";
+    githubLink.className = "github-link";
+    githubLink.textContent = "VaultApp on GitHub";
+    githubLink.addEventListener("click", (e) => {
+      e.preventDefault();
+      window.api.openExternalUrl("https://github.com/mucahit-sahin/VaultApp");
+    });
+
+    // Add GitHub icon
+    const githubIcon = document.createElement("span");
+    githubIcon.className = "github-icon";
+    githubIcon.innerHTML = "★"; // Simple star icon instead of FontAwesome
+
+    githubLink.prepend(githubIcon);
+    githubGroup.appendChild(githubLabel);
+    githubGroup.appendChild(githubLink);
+
+    // Add form actions
+    const formActions = document.createElement("div");
+    formActions.className = "form-actions";
+
+    saveSettingsBtn = document.createElement("button");
+    saveSettingsBtn.type = "button";
+    saveSettingsBtn.className = "btn primary-btn";
+    saveSettingsBtn.textContent = "Save";
+    saveSettingsBtn.addEventListener("click", saveSettings);
+
+    const cancelBtn = document.createElement("button");
+    cancelBtn.type = "button";
+    cancelBtn.className = "btn secondary-btn";
+    cancelBtn.textContent = "Cancel";
+    cancelBtn.addEventListener("click", () => {
+      settingsModal.style.display = "none";
+    });
+
+    formActions.appendChild(saveSettingsBtn);
+    formActions.appendChild(cancelBtn);
+
+    // Assemble form
+    settingsForm.appendChild(intervalGroup);
+    settingsForm.appendChild(vaultPathGroup);
+    settingsForm.appendChild(githubGroup);
+    settingsForm.appendChild(formActions);
+
+    // Assemble modal content
+    modalContent.appendChild(closeSettingsModal);
+    modalContent.appendChild(modalTitle);
+    modalContent.appendChild(settingsForm);
+
+    // Assemble modal
+    settingsModal.appendChild(modalContent);
+
+    // Add to document
+    document.body.appendChild(settingsModal);
+
+    // Close modal when clicking outside
+    settingsModal.addEventListener("click", (event) => {
+      if (event.target === settingsModal) {
+        settingsModal.style.display = "none";
+      }
+    });
+
+    // Get the current vault path
+    getCurrentVaultPath();
   };
 
   // Handle importing media
@@ -470,6 +618,10 @@ document.addEventListener("DOMContentLoaded", () => {
       // Create a document fragment for better performance
       const fragment = document.createDocumentFragment();
 
+      // Reset gallery navigation state
+      focusedItemIndex = -1;
+      galleryItems = [];
+
       // Add folders if we're not searching
       if (searchInput.value === "") {
         const relevantFolders = folders.filter((folder) => {
@@ -502,10 +654,18 @@ document.addEventListener("DOMContentLoaded", () => {
             folderItem.addEventListener("dblclick", () =>
               openFolder(folder.id)
             );
+
+            // Single click to focus folder item
+            folderItem.addEventListener("click", () => {
+              focusGalleryItem(galleryItems.indexOf(folderItem));
+            });
           }
 
           folderItem.dataset.folderId = folder.id;
           folderItem.dataset.itemType = "folder";
+
+          // Add to gallery items array for keyboard navigation
+          galleryItems.push(folderItem);
 
           const folderIcon = document.createElement("div");
           folderIcon.className = "folder-icon";
@@ -683,13 +843,19 @@ document.addEventListener("DOMContentLoaded", () => {
           });
         } else {
           // Open in modal when clicked outside selection mode
-          mediaItem.addEventListener("click", () => openMediaModal(file));
+          mediaItem.addEventListener("click", () => {
+            openMediaModal(file);
+            focusGalleryItem(galleryItems.indexOf(mediaItem));
+          });
         }
 
         mediaItem.dataset.secureFilename = file.secureFilename;
         mediaItem.dataset.name = file.name;
         mediaItem.dataset.type = file.type;
         mediaItem.dataset.itemType = "media";
+
+        // Add to gallery items array for keyboard navigation
+        galleryItems.push(mediaItem);
 
         // Create a basic placeholder thumbnail
         const thumbnail = document.createElement("div");
@@ -760,6 +926,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // Update selection UI if in selection mode
       updateSelectionUI();
+
+      // Set focus on the first item after updating display if there are items
+      if (galleryItems.length > 0 && focusedItemIndex === -1) {
+        focusGalleryItem(0);
+      }
     } finally {
       // Hide loading overlay when done, regardless of success or error
       showLoading(false);
@@ -1847,159 +2018,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
-  // Create settings modal
-  const createSettingsModal = () => {
-    // Create modal container if it doesn't exist
-    if (!settingsModal) {
-      settingsModal = document.createElement("div");
-      settingsModal.id = "settings-modal";
-      settingsModal.className = "modal";
-      settingsModal.style.display = "none";
-
-      // Create modal content
-      const modalContent = document.createElement("div");
-      modalContent.className = "modal-content settings-modal-content";
-
-      // Close button
-      closeSettingsModal = document.createElement("span");
-      closeSettingsModal.className = "close-modal";
-      closeSettingsModal.innerHTML = "&times;";
-      closeSettingsModal.addEventListener("click", () => {
-        settingsModal.style.display = "none";
-      });
-
-      // Modal title
-      const modalTitle = document.createElement("h3");
-      modalTitle.textContent = "Settings";
-
-      // Settings form
-      const settingsForm = document.createElement("form");
-      settingsForm.id = "settings-form";
-
-      // Interval setting
-      const intervalGroup = document.createElement("div");
-      intervalGroup.className = "form-group";
-
-      const intervalLabel = document.createElement("label");
-      intervalLabel.htmlFor = "slideshow-interval";
-      intervalLabel.textContent = "Slideshow Interval (seconds):";
-
-      slideshowIntervalInput = document.createElement("input");
-      slideshowIntervalInput.type = "number";
-      slideshowIntervalInput.id = "slideshow-interval";
-      slideshowIntervalInput.className = "form-input";
-      slideshowIntervalInput.min = "1";
-      slideshowIntervalInput.max = "60";
-      slideshowIntervalInput.step = "1";
-      slideshowIntervalInput.value = slideshowInterval / 1000;
-
-      intervalGroup.appendChild(intervalLabel);
-      intervalGroup.appendChild(slideshowIntervalInput);
-
-      // Vault path setting
-      const vaultPathGroup = document.createElement("div");
-      vaultPathGroup.className = "form-group";
-
-      const vaultPathLabel = document.createElement("label");
-      vaultPathLabel.textContent = "Encrypted Files Location:";
-
-      const vaultPathDescription = document.createElement("p");
-      vaultPathDescription.className = "setting-description";
-      vaultPathDescription.textContent =
-        "Files will be stored in a 'Vault' folder at the selected location.";
-
-      const vaultPathContainer = document.createElement("div");
-      vaultPathContainer.className = "vault-path-container";
-
-      currentVaultPathDisplay = document.createElement("div");
-      currentVaultPathDisplay.className = "vault-path-display";
-      currentVaultPathDisplay.textContent = "Loading...";
-
-      const changeVaultPathBtn = document.createElement("button");
-      changeVaultPathBtn.type = "button";
-      changeVaultPathBtn.className = "btn secondary-btn";
-      changeVaultPathBtn.textContent = "Change";
-      changeVaultPathBtn.addEventListener("click", handleChangeVaultPath);
-
-      vaultPathContainer.appendChild(currentVaultPathDisplay);
-      vaultPathContainer.appendChild(changeVaultPathBtn);
-
-      vaultPathGroup.appendChild(vaultPathLabel);
-      vaultPathGroup.appendChild(vaultPathDescription);
-      vaultPathGroup.appendChild(vaultPathContainer);
-
-      // GitHub Link
-      const githubGroup = document.createElement("div");
-      githubGroup.className = "form-group github-section";
-
-      const githubLabel = document.createElement("label");
-      githubLabel.textContent = "Project Repository:";
-
-      const githubLink = document.createElement("a");
-      githubLink.href = "#";
-      githubLink.className = "github-link";
-      githubLink.textContent = "VaultApp on GitHub";
-      githubLink.addEventListener("click", (e) => {
-        e.preventDefault();
-        window.api.openExternalUrl("https://github.com/mucahit-sahin/VaultApp");
-      });
-
-      // GitHub icon
-      const githubIcon = document.createElement("span");
-      githubIcon.className = "github-icon";
-      githubIcon.innerHTML = "★"; // Simple star icon instead of FontAwesome
-
-      githubLink.prepend(githubIcon);
-      githubGroup.appendChild(githubLabel);
-      githubGroup.appendChild(githubLink);
-
-      // Form actions
-      const formActions = document.createElement("div");
-      formActions.className = "form-actions";
-
-      saveSettingsBtn = document.createElement("button");
-      saveSettingsBtn.type = "button";
-      saveSettingsBtn.className = "btn primary-btn";
-      saveSettingsBtn.textContent = "Save";
-      saveSettingsBtn.addEventListener("click", saveSettings);
-
-      const cancelBtn = document.createElement("button");
-      cancelBtn.type = "button";
-      cancelBtn.className = "btn secondary-btn";
-      cancelBtn.textContent = "Cancel";
-      cancelBtn.addEventListener("click", () => {
-        settingsModal.style.display = "none";
-      });
-
-      formActions.appendChild(saveSettingsBtn);
-      formActions.appendChild(cancelBtn);
-
-      // Assemble form
-      settingsForm.appendChild(intervalGroup);
-      settingsForm.appendChild(vaultPathGroup);
-      settingsForm.appendChild(githubGroup);
-      settingsForm.appendChild(formActions);
-
-      // Assemble modal content
-      modalContent.appendChild(closeSettingsModal);
-      modalContent.appendChild(modalTitle);
-      modalContent.appendChild(settingsForm);
-
-      // Assemble modal
-      settingsModal.appendChild(modalContent);
-
-      // Add to document
-      document.body.appendChild(settingsModal);
-
-      // Close modal when clicking outside
-      settingsModal.addEventListener("click", (event) => {
-        if (event.target === settingsModal) {
-          settingsModal.style.display = "none";
-        }
-      });
-    }
-  };
-
   // Open settings modal
   const openSettingsModal = (event) => {
     // Prevent event propagation to avoid closing media modal
@@ -2098,16 +2116,30 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Add settings button to the main header
   const addSettingsButton = () => {
-    const settingsBtn = document.createElement("button");
-    settingsBtn.id = "settings-btn";
-    settingsBtn.className = "btn secondary-btn";
-    settingsBtn.innerHTML = "⚙️";
-    settingsBtn.addEventListener("click", openSettingsModal);
+    // Only add if we don't already have a settings button
+    if (!document.getElementById("settings-btn")) {
+      const settingsBtn = document.createElement("button");
+      settingsBtn.id = "settings-btn";
+      settingsBtn.className = "btn secondary-btn";
 
-    // Get header actions container and add settings button
-    const headerActions = document.querySelector(".header-actions");
-    if (headerActions) {
-      headerActions.appendChild(settingsBtn);
+      // Add settings icon
+      const settingsIcon = document.createTextNode("⚙️");
+      settingsBtn.appendChild(settingsIcon);
+
+      // Add shortcut hint
+      const shortcutSpan = document.createElement("span");
+      shortcutSpan.className = "shortcut-hint";
+      shortcutSpan.textContent = "S";
+      settingsBtn.appendChild(document.createTextNode(" "));
+      settingsBtn.appendChild(shortcutSpan);
+
+      settingsBtn.addEventListener("click", openSettingsModal);
+
+      // Add it to the header actions
+      const headerActions = document.querySelector(".header-actions");
+      if (headerActions) {
+        headerActions.appendChild(settingsBtn);
+      }
     }
   };
 
@@ -2164,6 +2196,366 @@ document.addEventListener("DOMContentLoaded", () => {
       } finally {
         // Hide loading overlay
         showLoading(false);
+      }
+    }
+  };
+
+  // Handle keyboard navigation in the gallery
+  const handleGalleryKeyNavigation = (event) => {
+    // Don't process keyboard events when a modal is open or in selection mode
+    if (
+      mediaModal.style.display === "block" ||
+      folderModal.style.display === "block" ||
+      moveModal.style.display === "block" ||
+      (settingsModal && settingsModal.style.display === "block") ||
+      isSelectionMode ||
+      document.activeElement === searchInput
+    )
+      return;
+
+    switch (event.key) {
+      case "ArrowLeft":
+        navigateGalleryLeft();
+        break;
+      case "ArrowRight":
+        navigateGalleryRight();
+        break;
+      case "ArrowUp":
+        navigateGalleryUp();
+        break;
+      case "ArrowDown":
+        navigateGalleryDown();
+        break;
+      case "Enter":
+        activateFocusedItem();
+        break;
+      case "Backspace":
+        if (currentFolderId !== null) {
+          handleBackButton();
+        }
+        break;
+      case "Delete":
+        deleteFocusedItem();
+        break;
+    }
+  };
+
+  // Handle application-wide keyboard shortcuts
+  const handleAppShortcuts = (event) => {
+    // Don't process keyboard events when input elements are focused
+    if (
+      document.activeElement.tagName === "INPUT" ||
+      document.activeElement.tagName === "TEXTAREA" ||
+      document.activeElement.isContentEditable
+    )
+      return;
+
+    switch (event.key) {
+      case "F1":
+        // Import media shortcut
+        event.preventDefault(); // Prevent browser's default F1 help
+        handleImport();
+        break;
+      case "F2":
+        // Create folder shortcut
+        event.preventDefault();
+        openFolderModal();
+        break;
+      case "F3":
+        // Select items shortcut
+        event.preventDefault();
+        toggleSelectionMode();
+        break;
+      case "s":
+      case "S":
+        // Settings shortcut (only if not typing in a field)
+        if (!event.ctrlKey) {
+          // Avoid triggering with Ctrl+S (save)
+          event.preventDefault();
+          openSettingsModal();
+        }
+        break;
+      case "Control":
+        // Logout shortcut
+        // Note: Using just Ctrl as a shortcut is not ideal since it's used in many combinations
+        // But implementing as requested
+        if (confirm("Are you sure you want to log out?")) {
+          // Clear cache before logout
+          mediaCache = {};
+          window.api.logout();
+        }
+        break;
+      case "1":
+        // Filter: All
+        applyFilter("all");
+        break;
+      case "2":
+        // Filter: Images
+        applyFilter("image");
+        break;
+      case "3":
+        // Filter: Videos
+        applyFilter("video");
+        break;
+    }
+  };
+
+  // Update button labels to show keyboard shortcuts
+  const updateButtonLabels = () => {
+    if (importBtn) {
+      const originalText = importBtn.textContent || "Import Media";
+      const shortcutSpan = document.createElement("span");
+      shortcutSpan.className = "shortcut-hint";
+      shortcutSpan.textContent = "F1";
+
+      importBtn.innerHTML = ""; // Clear existing content
+      importBtn.appendChild(document.createTextNode(originalText));
+      importBtn.appendChild(document.createTextNode(" "));
+      importBtn.appendChild(shortcutSpan);
+    }
+
+    if (createFolderBtn) {
+      const originalText = createFolderBtn.textContent || "Create Folder";
+      const shortcutSpan = document.createElement("span");
+      shortcutSpan.className = "shortcut-hint";
+      shortcutSpan.textContent = "F2";
+
+      createFolderBtn.innerHTML = ""; // Clear existing content
+      createFolderBtn.appendChild(document.createTextNode(originalText));
+      createFolderBtn.appendChild(document.createTextNode(" "));
+      createFolderBtn.appendChild(shortcutSpan);
+    }
+
+    if (selectModeBtn) {
+      const originalText = selectModeBtn.textContent || "Select Items";
+      const shortcutSpan = document.createElement("span");
+      shortcutSpan.className = "shortcut-hint";
+      shortcutSpan.textContent = "F3";
+
+      selectModeBtn.innerHTML = ""; // Clear existing content
+      selectModeBtn.appendChild(document.createTextNode(originalText));
+      selectModeBtn.appendChild(document.createTextNode(" "));
+      selectModeBtn.appendChild(shortcutSpan);
+    }
+
+    if (logoutBtn) {
+      const originalText = logoutBtn.textContent || "Logout";
+      const shortcutSpan = document.createElement("span");
+      shortcutSpan.className = "shortcut-hint";
+      shortcutSpan.textContent = "Ctrl";
+
+      logoutBtn.innerHTML = ""; // Clear existing content
+      logoutBtn.appendChild(document.createTextNode(originalText));
+      logoutBtn.appendChild(document.createTextNode(" "));
+      logoutBtn.appendChild(shortcutSpan);
+    }
+
+    // Add shortcut hints to filter buttons
+    if (viewAllBtn) {
+      const originalText = viewAllBtn.textContent || "All";
+      const shortcutSpan = document.createElement("span");
+      shortcutSpan.className = "shortcut-hint";
+      shortcutSpan.textContent = "1";
+
+      viewAllBtn.innerHTML = ""; // Clear existing content
+      viewAllBtn.appendChild(document.createTextNode(originalText));
+      viewAllBtn.appendChild(document.createTextNode(" "));
+      viewAllBtn.appendChild(shortcutSpan);
+    }
+
+    if (viewImagesBtn) {
+      const originalText = viewImagesBtn.textContent || "Images";
+      const shortcutSpan = document.createElement("span");
+      shortcutSpan.className = "shortcut-hint";
+      shortcutSpan.textContent = "2";
+
+      viewImagesBtn.innerHTML = ""; // Clear existing content
+      viewImagesBtn.appendChild(document.createTextNode(originalText));
+      viewImagesBtn.appendChild(document.createTextNode(" "));
+      viewImagesBtn.appendChild(shortcutSpan);
+    }
+
+    if (viewVideosBtn) {
+      const originalText = viewVideosBtn.textContent || "Videos";
+      const shortcutSpan = document.createElement("span");
+      shortcutSpan.className = "shortcut-hint";
+      shortcutSpan.textContent = "3";
+
+      viewVideosBtn.innerHTML = ""; // Clear existing content
+      viewVideosBtn.appendChild(document.createTextNode(originalText));
+      viewVideosBtn.appendChild(document.createTextNode(" "));
+      viewVideosBtn.appendChild(shortcutSpan);
+    }
+  };
+
+  // Delete the currently focused item
+  const deleteFocusedItem = () => {
+    if (focusedItemIndex < 0 || focusedItemIndex >= galleryItems.length) return;
+
+    const focusedItem = galleryItems[focusedItemIndex];
+    const itemType = focusedItem.dataset.itemType;
+
+    if (itemType === "folder") {
+      const folderId = focusedItem.dataset.folderId;
+      const folder = folders.find((f) => f.id === folderId);
+      if (folder) {
+        handleDeleteFolder(folderId, folder.name);
+      }
+    } else if (itemType === "media") {
+      // Find the matching file object
+      const secureFilename = focusedItem.dataset.secureFilename;
+      const file = filteredMediaFiles.find(
+        (f) => f.secureFilename === secureFilename
+      );
+      if (file) {
+        // Create temporary currentMediaFile for deletion
+        currentMediaFile = file;
+        handleDeleteMedia();
+        currentMediaFile = null;
+      }
+    }
+  };
+
+  // Navigate gallery left with keyboard
+  const navigateGalleryLeft = () => {
+    if (galleryItems.length === 0) return;
+
+    if (focusedItemIndex <= 0) {
+      // Wrap around to the last item
+      focusGalleryItem(galleryItems.length - 1);
+    } else {
+      focusGalleryItem(focusedItemIndex - 1);
+    }
+  };
+
+  // Navigate gallery right with keyboard
+  const navigateGalleryRight = () => {
+    if (galleryItems.length === 0) return;
+
+    if (focusedItemIndex >= galleryItems.length - 1) {
+      // Wrap around to the first item
+      focusGalleryItem(0);
+    } else {
+      focusGalleryItem(focusedItemIndex + 1);
+    }
+  };
+
+  // Navigate gallery up with keyboard
+  const navigateGalleryUp = () => {
+    if (galleryItems.length === 0) return;
+
+    // Calculate the number of items per row based on the container width and item width
+    const containerWidth = mediaContainer.clientWidth;
+    const itemWidth = galleryItems[0].offsetWidth + 20; // Add margin/gap
+    const itemsPerRow = Math.floor(containerWidth / itemWidth);
+
+    if (focusedItemIndex - itemsPerRow >= 0) {
+      focusGalleryItem(focusedItemIndex - itemsPerRow);
+    } else {
+      // Go to the first item or maintain current position
+      focusGalleryItem(focusedItemIndex % itemsPerRow);
+    }
+  };
+
+  // Navigate gallery down with keyboard
+  const navigateGalleryDown = () => {
+    if (galleryItems.length === 0) return;
+
+    // Calculate the number of items per row
+    const containerWidth = mediaContainer.clientWidth;
+    const itemWidth = galleryItems[0].offsetWidth + 20; // Add margin/gap
+    const itemsPerRow = Math.floor(containerWidth / itemWidth);
+
+    if (focusedItemIndex + itemsPerRow < galleryItems.length) {
+      focusGalleryItem(focusedItemIndex + itemsPerRow);
+    } else {
+      // Go to the last row at same column position
+      const lastRowItemCount = galleryItems.length % itemsPerRow;
+      const column = focusedItemIndex % itemsPerRow;
+
+      if (lastRowItemCount > 0 && column >= lastRowItemCount) {
+        // If column is beyond the last item in the last row, go to the last item
+        focusGalleryItem(galleryItems.length - 1);
+      } else {
+        // Otherwise go to the same column in the last row
+        focusGalleryItem(
+          galleryItems.length - lastRowItemCount + (column % lastRowItemCount)
+        );
+      }
+    }
+  };
+
+  // Focus a gallery item by index
+  const focusGalleryItem = (index) => {
+    if (index < 0 || index >= galleryItems.length) return;
+
+    // Remove focus from the currently focused item
+    if (focusedItemIndex >= 0 && focusedItemIndex < galleryItems.length) {
+      galleryItems[focusedItemIndex].classList.remove("keyboard-focused");
+    }
+
+    // Set focus on the new item
+    focusedItemIndex = index;
+    galleryItems[focusedItemIndex].classList.add("keyboard-focused");
+    galleryItems[focusedItemIndex].scrollIntoView({
+      behavior: "smooth",
+      block: "nearest",
+    });
+  };
+
+  // Activate the currently focused item (respond to Enter key)
+  const activateFocusedItem = () => {
+    if (focusedItemIndex < 0 || focusedItemIndex >= galleryItems.length) return;
+
+    const focusedItem = galleryItems[focusedItemIndex];
+    const itemType = focusedItem.dataset.itemType;
+
+    if (itemType === "folder") {
+      const folderId = focusedItem.dataset.folderId;
+      openFolder(folderId);
+    } else if (itemType === "media") {
+      // Find the matching file object
+      const secureFilename = focusedItem.dataset.secureFilename;
+      const file = filteredMediaFiles.find(
+        (f) => f.secureFilename === secureFilename
+      );
+      if (file) {
+        openMediaModal(file);
+      }
+    }
+  };
+
+  // Setup initial focus for gallery
+  const setupGalleryFocus = () => {
+    // Focus the first item if there are any
+    if (galleryItems.length > 0 && focusedItemIndex === -1) {
+      focusGalleryItem(0);
+    }
+  };
+
+  // Close settings modal
+  const closeSettingsModalHandler = () => {
+    if (settingsModal) {
+      settingsModal.style.display = "none";
+    }
+  };
+
+  // Handle keyboard events for modals (ESC to close)
+  const handleModalKeyEvents = (event) => {
+    if (event.key === "Escape") {
+      // Close folder modal if open
+      if (folderModal && folderModal.style.display === "block") {
+        closeFolderModalHandler();
+      }
+
+      // Close settings modal if open
+      if (settingsModal && settingsModal.style.display === "block") {
+        settingsModal.style.display = "none";
+      }
+
+      // Close move modal if open
+      if (moveModal && moveModal.style.display === "block") {
+        closeMoveModalHandler();
       }
     }
   };

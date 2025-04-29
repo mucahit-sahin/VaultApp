@@ -3,6 +3,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const loginBtn = document.getElementById("login-btn");
   const errorMessage = document.getElementById("error-message");
 
+  // Automatically focus the PIN input field when the page loads
+  pinInput.focus();
+
   // Check for dark mode preference
   const darkMode = localStorage.getItem("darkMode") === "enabled";
   if (darkMode) {
@@ -36,10 +39,14 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!isValid) {
         errorMessage.textContent = "Invalid PIN";
         pinInput.value = "";
+        // Re-focus the input after an error
+        pinInput.focus();
       }
       // If valid, will automatically redirect to main app
     } catch (error) {
       errorMessage.textContent = `Error: ${error.message}`;
+      // Re-focus the input after an error
+      pinInput.focus();
     }
   });
 });

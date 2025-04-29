@@ -59,6 +59,10 @@ body {
   cursor: pointer;
   font-size: 14px;
   transition: all 0.3s ease;
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .primary-btn {
@@ -95,6 +99,24 @@ body {
 
 .danger-btn:hover {
   background-color: var(--danger-btn-hover);
+}
+
+/* Shortcut hint style */
+.shortcut-hint {
+  display: inline-block;
+  padding: 2px 6px;
+  margin-left: 6px;
+  border-radius: 3px;
+  background-color: rgba(0, 0, 0, 0.15);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  vertical-align: middle;
+}
+
+/* Dark mode variation */
+.dark-mode .shortcut-hint {
+  background-color: rgba(255, 255, 255, 0.15);
 }
 
 /* Disabled button styles */
@@ -182,6 +204,13 @@ button:disabled,
 .header-actions {
   display: flex;
   gap: 10px;
+  align-items: center;
+}
+
+.header-actions .btn {
+  height: 38px;
+  display: flex;
+  align-items: center;
 }
 
 .main-container {
@@ -251,17 +280,27 @@ button:disabled,
   margin-top: 20px;
 }
 
-.media-item {
+.media-item,
+.folder-item {
   background-color: var(--media-item-bg);
   border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 2px 5px var(--shadow-color);
   cursor: pointer;
-  transition: transform 0.3s ease;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
   position: relative;
 }
 
-.media-item:hover {
+.media-item:hover,
+.folder-item:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 5px 15px var(--shadow-color);
+}
+
+/* Keyboard navigation focus style */
+.media-item.keyboard-focused,
+.folder-item.keyboard-focused {
+  outline: 3px solid var(--action-btn-bg);
   transform: translateY(-5px);
   box-shadow: 0 5px 15px var(--shadow-color);
 }
@@ -958,9 +997,9 @@ body.selection-mode .folder-item {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 38px;
+  width: 68px;
   height: 38px;
-  padding: 0;
+  padding: 0 8px;
   font-size: 20px;
 }
 
