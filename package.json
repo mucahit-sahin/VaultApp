@@ -13,7 +13,9 @@
   "description": "A secure app to store photos and videos behind PIN protection",
   "dependencies": {
     "bcryptjs": "^3.0.2",
-    "crypto-js": "^4.2.0",
+    "crypto-js": "^4.2.0"
+  },
+  "devDependencies": {
     "electron": "^35.2.1",
     "electron-builder": "^26.0.12"
   },
@@ -24,7 +26,14 @@
       "output": "dist"
     },
     "win": {
-      "target": "nsis"
+      "target": "nsis",
+      "icon": "assets/icon.ico"
+    },
+    "mac": {
+      "icon": "assets/icon.ico"
+    },
+    "linux": {
+      "icon": "assets/icon.ico"
     }
   }
 }
