@@ -1464,6 +1464,10 @@ document.addEventListener("DOMContentLoaded", () => {
       document.body.classList.add("selection-mode");
       selectModeBtn.textContent = "Cancel Selection";
       selectionActions.style.display = "flex";
+
+      // Initially disable action buttons as no items are selected yet
+      moveToFolderBtn.disabled = true;
+      deleteSelectedBtn.disabled = true;
     } else {
       document.body.classList.remove("selection-mode");
       selectModeBtn.textContent = "Select Items";
@@ -1551,8 +1555,11 @@ document.addEventListener("DOMContentLoaded", () => {
       selectedCount.textContent = `${selectedItems.length} item${
         selectedItems.length !== 1 ? "s" : ""
       } selected`;
-      moveToFolderBtn.disabled = selectedItems.length === 0;
-      deleteSelectedBtn.disabled = selectedItems.length === 0;
+
+      // Disable move and delete buttons when no items are selected
+      const hasSelectedItems = selectedItems.length > 0;
+      moveToFolderBtn.disabled = !hasSelectedItems;
+      deleteSelectedBtn.disabled = !hasSelectedItems;
     }
   };
 
@@ -1581,19 +1588,42 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // Ignore long press if already in selection mode
         if (!isSelectionMode) {
+          // Capture the item details for selection before toggling mode
+          const itemToSelect = {
+            type: "media",
+            secureFilename: element.dataset.secureFilename,
+            name: element.dataset.name,
+            element: element,
+          };
+
           // Enter selection mode
           toggleSelectionMode();
 
-          // Select the item that was long-pressed
-          if (element.dataset.itemType === "media") {
-            // Ensure type is set correctly for the toggleItemSelection function
-            const boundFile = {
-              ...file,
-              type: "media",
-              secureFilename: element.dataset.secureFilename,
-              name: element.dataset.name,
-            };
-            toggleItemSelection(element, boundFile);
+          // After display is updated, find the same element and select it
+          // We need to do this because toggleSelectionMode causes DOM refresh
+          if (itemToSelect.type === "media") {
+            // Find the element in the refreshed DOM
+            const updatedElement = document.querySelector(
+              `.media-item[data-secure-filename="${itemToSelect.secureFilename}"]`
+            );
+
+            if (updatedElement) {
+              // Create the complete item object for selection
+              const itemToToggle = {
+                type: "media",
+                secureFilename: itemToSelect.secureFilename,
+                name: itemToSelect.name,
+              };
+
+              // Add the item to selectedItems
+              selectedItems.push(itemToToggle);
+
+              // Mark as selected visually
+              updatedElement.classList.add("selected");
+
+              // Update UI counters and buttons
+              updateSelectionUI();
+            }
           }
         }
       }, longPressDuration);
@@ -1643,26 +1673,49 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       }, 100);
 
-      // Start long press timer
+      // Start long press timer for touchstart
       longPressTimer = setTimeout(() => {
         // Remove visual feedback
         element.classList.remove("long-press");
 
         // Ignore long press if already in selection mode
         if (!isSelectionMode) {
+          // Capture the item details for selection before toggling mode
+          const itemToSelect = {
+            type: "media",
+            secureFilename: element.dataset.secureFilename,
+            name: element.dataset.name,
+            element: element,
+          };
+
           // Enter selection mode
           toggleSelectionMode();
 
-          // Select the item that was long-pressed
-          if (element.dataset.itemType === "media") {
-            // Ensure type is set correctly for the toggleItemSelection function
-            const boundFile = {
-              ...file,
-              type: "media",
-              secureFilename: element.dataset.secureFilename,
-              name: element.dataset.name,
-            };
-            toggleItemSelection(element, boundFile);
+          // After display is updated, find the same element and select it
+          // We need to do this because toggleSelectionMode causes DOM refresh
+          if (itemToSelect.type === "media") {
+            // Find the element in the refreshed DOM
+            const updatedElement = document.querySelector(
+              `.media-item[data-secure-filename="${itemToSelect.secureFilename}"]`
+            );
+
+            if (updatedElement) {
+              // Create the complete item object for selection
+              const itemToToggle = {
+                type: "media",
+                secureFilename: itemToSelect.secureFilename,
+                name: itemToSelect.name,
+              };
+
+              // Add the item to selectedItems
+              selectedItems.push(itemToToggle);
+
+              // Mark as selected visually
+              updatedElement.classList.add("selected");
+
+              // Update UI counters and buttons
+              updateSelectionUI();
+            }
           }
         }
       }, longPressDuration);

@@ -97,6 +97,21 @@ body {
   background-color: var(--danger-btn-hover);
 }
 
+/* Disabled button styles */
+button:disabled,
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.action-btn:disabled,
+.danger-btn:disabled,
+.primary-btn:disabled {
+  background-color: var(--border-color);
+  color: var(--text-secondary);
+}
+
 /* Authentication Styles */
 .auth-container {
   display: flex;
@@ -1109,4 +1124,12 @@ body.selection-mode .folder-item {
 
 .dark-mode .github-link:hover {
   background-color: #444;
+}
+
+/* Long press feedback style */
+.media-item.long-press,
+.folder-item.long-press {
+  transform: scale(0.95);
+  box-shadow: 0 0 0 3px var(--action-btn-bg);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
