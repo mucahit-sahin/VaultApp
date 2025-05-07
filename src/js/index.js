@@ -413,6 +413,28 @@ document.addEventListener("DOMContentLoaded", () => {
     vaultPathGroup.appendChild(vaultPathDescription);
     vaultPathGroup.appendChild(vaultPathContainer);
 
+    // Add delete all encrypted data section
+    const deleteDataGroup = document.createElement("div");
+    deleteDataGroup.className = "form-group danger-section";
+
+    const deleteDataLabel = document.createElement("label");
+    deleteDataLabel.textContent = "Danger Zone:";
+
+    const deleteDataDescription = document.createElement("p");
+    deleteDataDescription.className = "setting-description";
+    deleteDataDescription.textContent =
+      "This will permanently delete all your encrypted files and cannot be undone.";
+
+    const deleteAllDataBtn = document.createElement("button");
+    deleteAllDataBtn.type = "button";
+    deleteAllDataBtn.className = "btn danger-btn";
+    deleteAllDataBtn.textContent = "Delete All Encrypted Data";
+    deleteAllDataBtn.addEventListener("click", handleDeleteAllEncryptedData);
+
+    deleteDataGroup.appendChild(deleteDataLabel);
+    deleteDataGroup.appendChild(deleteDataDescription);
+    deleteDataGroup.appendChild(deleteAllDataBtn);
+
     // Add GitHub link
     const githubGroup = document.createElement("div");
     githubGroup.className = "form-group github-section";
@@ -462,6 +484,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // Assemble form
     settingsForm.appendChild(intervalGroup);
     settingsForm.appendChild(vaultPathGroup);
+    settingsForm.appendChild(deleteDataGroup);
     settingsForm.appendChild(githubGroup);
     settingsForm.appendChild(formActions);
 
@@ -2111,6 +2134,53 @@ document.addEventListener("DOMContentLoaded", () => {
     // Restart slideshow if active
     if (isSlideshow) {
       startSlideshow();
+    }
+  };
+
+  // Handle deleting all encrypted data
+  const handleDeleteAllEncryptedData = async () => {
+    // Show a confirmation dialog
+    const confirmDelete = confirm(
+      "WARNING: This will permanently delete ALL your encrypted files. This action CANNOT be undone. Are you sure you want to continue?"
+    );
+
+    // If not confirmed, do nothing
+    if (!confirmDelete) {
+      return;
+    }
+
+    // Show loading indicator
+    showLoading(true);
+
+    try {
+      // Call the API to delete all data
+      const result = await window.api.deleteAllEncryptedData();
+      
+      // Hide loading indicator
+      showLoading(false);
+
+      if (result.success) {
+        // Close settings modal
+        settingsModal.style.display = "none";
+        
+        // Clear media arrays and update display
+        mediaFiles = [];
+        filteredMediaFiles = [];
+        folders = [];
+        mediaCache = {};
+        
+        // Update display
+        updateMediaDisplay();
+        
+        // Show success message
+        alert("All encrypted data has been successfully deleted.");
+      } else {
+        alert("Error deleting encrypted data: " + result.message);
+      }
+    } catch (error) {
+      showLoading(false);
+      console.error("Error deleting all encrypted data:", error);
+      alert("An error occurred while deleting encrypted data.");
     }
   };
 

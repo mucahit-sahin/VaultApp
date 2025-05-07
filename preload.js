@@ -41,4 +41,7 @@ contextBridge.exposeInMainWorld("api", {
 
   // Authentication
   logout: () => ipcRenderer.invoke("logout"),
+
+  // Data management
+  deleteAllEncryptedData: () => ipcRenderer.invoke("delete-all-encrypted-data"),
 });

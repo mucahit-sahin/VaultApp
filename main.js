@@ -619,6 +619,42 @@ ipcMain.handle("logout", () => {
   return true;
 });
 
+// Delete all encrypted data handler
+ipcMain.handle("delete-all-encrypted-data", async () => {
+  if (!isAuthenticated) return { success: false, message: "Not authenticated" };
+
+  try {
+    // Get all files in the vault directory
+    const files = fs.readdirSync(settings.vaultPath);
+    
+    // Delete each file
+    for (const file of files) {
+      try {
+        const filePath = path.join(settings.vaultPath, file);
+        // Check if it's a file, not a directory
+        const stats = fs.statSync(filePath);
+        if (stats.isFile()) {
+          fs.unlinkSync(filePath);
+        }
+      } catch (fileError) {
+        console.error(`Error deleting file ${file}:`, fileError);
+      }
+    }
+    
+    // Reset metadata
+    mediaMetadata = { folders: {} };
+    saveMetadata();
+    
+    // Clear thumbnail cache
+    thumbnailCache = {};
+    
+    return { success: true, message: "All encrypted data deleted successfully" };
+  } catch (error) {
+    console.error("Error deleting encrypted data:", error);
+    return { success: false, message: error.message };
+  }
+});
+
 // Create a new folder
 ipcMain.handle("create-folder", async (event, folderName) => {
   if (!isAuthenticated) return { success: false, message: "Not authenticated" };
