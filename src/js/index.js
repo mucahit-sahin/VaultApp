@@ -413,6 +413,134 @@ document.addEventListener("DOMContentLoaded", () => {
     vaultPathGroup.appendChild(vaultPathDescription);
     vaultPathGroup.appendChild(vaultPathContainer);
 
+    // Add shortcuts customization section
+    const shortcutsGroup = document.createElement("div");
+    shortcutsGroup.className = "form-group shortcuts-section";
+
+    const shortcutsLabel = document.createElement("label");
+    shortcutsLabel.textContent = "Keyboard Shortcuts:";
+
+    const shortcutsDescription = document.createElement("p");
+    shortcutsDescription.className = "setting-description";
+    shortcutsDescription.textContent =
+      "Customize keyboard shortcuts for common actions. Leave empty to disable a shortcut.";
+
+    shortcutsGroup.appendChild(shortcutsLabel);
+    shortcutsGroup.appendChild(shortcutsDescription);
+
+    // Create shortcut settings table
+    const shortcutsTable = document.createElement("table");
+    shortcutsTable.className = "shortcuts-table";
+
+    // Add header row
+    const headerRow = document.createElement("tr");
+    
+    const actionHeader = document.createElement("th");
+    actionHeader.textContent = "Action";
+    
+    const shortcutHeader = document.createElement("th");
+    shortcutHeader.textContent = "Shortcut";
+    
+    headerRow.appendChild(actionHeader);
+    headerRow.appendChild(shortcutHeader);
+    shortcutsTable.appendChild(headerRow);
+
+    // Define shortcuts to customize
+    const shortcuts = [
+      { id: "import", action: "Import Media", defaultKey: "F1" },
+      { id: "createFolder", action: "Create Folder", defaultKey: "F2" },
+      { id: "selectItems", action: "Select Items", defaultKey: "F3" },
+      { id: "settings", action: "Settings", defaultKey: "S" },
+      { id: "logout", action: "Logout", defaultKey: "Control" },
+      { id: "filterAll", action: "Filter All", defaultKey: "1" },
+      { id: "filterImages", action: "Filter Images", defaultKey: "2" },
+      { id: "filterVideos", action: "Filter Videos", defaultKey: "3" },
+    ];
+
+    // Get saved shortcuts from localStorage or use defaults
+    const savedShortcuts = JSON.parse(localStorage.getItem("customShortcuts")) || {};
+
+    // Create input fields for each shortcut
+    shortcuts.forEach(shortcut => {
+      const row = document.createElement("tr");
+      
+      const actionCell = document.createElement("td");
+      actionCell.textContent = shortcut.action;
+      
+      const shortcutCell = document.createElement("td");
+      shortcutCell.className = "shortcut-controls";
+      
+      // Create a container for all shortcut controls to be in one line
+      const controlsContainer = document.createElement("div");
+      controlsContainer.className = "controls-flex-container";
+      
+      // Add enable/disable checkbox
+      const enableCheckbox = document.createElement("input");
+      enableCheckbox.type = "checkbox";
+      enableCheckbox.className = "shortcut-enable";
+      enableCheckbox.id = `enable-${shortcut.id}`;
+      enableCheckbox.title = "Enable/disable shortcut";
+      
+      // Check if the shortcut exists in saved shortcuts
+      const shortcutExists = shortcut.id in savedShortcuts;
+      
+      // For new installations or upgrades, default all shortcuts to disabled
+      // Only set to true if explicitly saved as enabled before
+      let isEnabled = false;
+      if (shortcutExists) {
+        isEnabled = savedShortcuts[shortcut.id] !== "";
+      }
+      
+      enableCheckbox.checked = isEnabled;
+      
+      const shortcutInput = document.createElement("input");
+      shortcutInput.type = "text";
+      shortcutInput.className = "shortcut-input";
+      shortcutInput.id = `shortcut-${shortcut.id}`;
+      shortcutInput.placeholder = shortcut.defaultKey;
+      shortcutInput.value = savedShortcuts[shortcut.id] || "";
+      
+      // Disable input when checkbox is unchecked
+      shortcutInput.disabled = !enableCheckbox.checked;
+      
+      // Add event listener to toggle input disabled state
+      enableCheckbox.addEventListener("change", () => {
+        shortcutInput.disabled = !enableCheckbox.checked;
+        if (!enableCheckbox.checked) {
+          shortcutInput.value = ""; // Clear value when disabled
+        } else if (shortcutInput.value === "") {
+          shortcutInput.value = shortcut.defaultKey; // Set to default when enabled and empty
+        }
+      });
+      
+      // Add button to reset to default
+      const resetBtn = document.createElement("button");
+      resetBtn.type = "button";
+      resetBtn.className = "reset-shortcut-btn";
+      resetBtn.textContent = "Reset";
+      resetBtn.title = "Reset to default";
+      resetBtn.addEventListener("click", () => {
+        shortcutInput.value = shortcut.defaultKey;
+        enableCheckbox.checked = true;
+        shortcutInput.disabled = false;
+      });
+      
+      // Add all elements to the controls container
+      controlsContainer.appendChild(enableCheckbox);
+      controlsContainer.appendChild(shortcutInput);
+      controlsContainer.appendChild(resetBtn);
+      
+      // Add the controls container to the cell
+      shortcutCell.appendChild(controlsContainer);
+      
+      row.appendChild(actionCell);
+      row.appendChild(shortcutCell);
+      
+      shortcutsTable.appendChild(row);
+    });
+
+    shortcutsGroup.appendChild(shortcutsTable);
+
     // Add delete all encrypted data section
     const deleteDataGroup = document.createElement("div");
     deleteDataGroup.className = "form-group danger-section";
@@ -484,6 +612,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // Assemble form
     settingsForm.appendChild(intervalGroup);
     settingsForm.appendChild(vaultPathGroup);
+    settingsForm.appendChild(shortcutsGroup);
     settingsForm.appendChild(deleteDataGroup);
     settingsForm.appendChild(githubGroup);
     settingsForm.appendChild(formActions);
@@ -2128,6 +2257,22 @@ document.addEventListener("DOMContentLoaded", () => {
     // Save to localStorage
     localStorage.setItem("slideshowInterval", slideshowInterval.toString());
 
+    // Save shortcuts
+    const customShortcuts = {};
+    document.querySelectorAll(".shortcut-input").forEach(input => {
+      const shortcutId = input.id.replace("shortcut-", "");
+      const enableCheckbox = document.getElementById(`enable-${shortcutId}`);
+      
+      // Only save value if the shortcut is enabled
+      if (enableCheckbox && enableCheckbox.checked) {
+        customShortcuts[shortcutId] = input.value.trim();
+      } else {
+        customShortcuts[shortcutId] = ""; // Empty string means disabled
+      }
+    });
+    
+    localStorage.setItem("customShortcuts", JSON.stringify(customShortcuts));
+
     // Close modal
     settingsModal.style.display = "none";
 
@@ -2135,6 +2280,19 @@ document.addEventListener("DOMContentLoaded", () => {
     if (isSlideshow) {
       startSlideshow();
     }
+    
+    // Immediately update button labels with new shortcuts
+    updateButtonLabels();
+    
+    // Recreate settings button to update its shortcut
+    const oldSettingsBtn = document.getElementById("settings-btn");
+    if (oldSettingsBtn) {
+      oldSettingsBtn.remove();
+      addSettingsButton();
+    }
+    
+    // Alert user about successful save
+    alert("Settings saved successfully. Shortcuts have been updated.");
   };
 
   // Handle deleting all encrypted data
@@ -2196,12 +2354,18 @@ document.addEventListener("DOMContentLoaded", () => {
       const settingsIcon = document.createTextNode("⚙️");
       settingsBtn.appendChild(settingsIcon);
 
-      // Add shortcut hint
-      const shortcutSpan = document.createElement("span");
-      shortcutSpan.className = "shortcut-hint";
-      shortcutSpan.textContent = "S";
-      settingsBtn.appendChild(document.createTextNode(" "));
-      settingsBtn.appendChild(shortcutSpan);
+      // Get saved shortcuts from localStorage or use defaults
+      const savedShortcuts = JSON.parse(localStorage.getItem("customShortcuts")) || {};
+      const settingsShortcut = savedShortcuts.settings === "" ? null : (savedShortcuts.settings || "S");
+
+      // Add shortcut hint if shortcut exists AND is enabled
+      if (settingsShortcut) {
+        const shortcutSpan = document.createElement("span");
+        shortcutSpan.className = "shortcut-hint";
+        shortcutSpan.textContent = settingsShortcut;
+        settingsBtn.appendChild(document.createTextNode(" "));
+        settingsBtn.appendChild(shortcutSpan);
+      }
 
       settingsBtn.addEventListener("click", openSettingsModal);
 
@@ -2320,141 +2484,201 @@ document.addEventListener("DOMContentLoaded", () => {
     )
       return;
 
+    // Get saved shortcuts from localStorage or use defaults
+    const savedShortcuts = JSON.parse(localStorage.getItem("customShortcuts")) || {};
+    
+    // Check each shortcut - empty string means the shortcut is disabled
+    const importShortcut = savedShortcuts.import === "" ? null : (savedShortcuts.import || "F1");
+    const createFolderShortcut = savedShortcuts.createFolder === "" ? null : (savedShortcuts.createFolder || "F2");
+    const selectItemsShortcut = savedShortcuts.selectItems === "" ? null : (savedShortcuts.selectItems || "F3");
+    const settingsShortcut = savedShortcuts.settings === "" ? null : (savedShortcuts.settings || "S");
+    const logoutShortcut = savedShortcuts.logout === "" ? null : (savedShortcuts.logout || "Control");
+    const filterAllShortcut = savedShortcuts.filterAll === "" ? null : (savedShortcuts.filterAll || "1");
+    const filterImagesShortcut = savedShortcuts.filterImages === "" ? null : (savedShortcuts.filterImages || "2");
+    const filterVideosShortcut = savedShortcuts.filterVideos === "" ? null : (savedShortcuts.filterVideos || "3");
+
     switch (event.key) {
-      case "F1":
+      case importShortcut:
         // Import media shortcut
         event.preventDefault(); // Prevent browser's default F1 help
-        handleImport();
+        if (importShortcut) handleImport();
         break;
-      case "F2":
+      case createFolderShortcut:
         // Create folder shortcut
         event.preventDefault();
-        openFolderModal();
+        if (createFolderShortcut) openFolderModal();
         break;
-      case "F3":
+      case selectItemsShortcut:
         // Select items shortcut
         event.preventDefault();
-        toggleSelectionMode();
+        if (selectItemsShortcut) toggleSelectionMode();
         break;
-      case "s":
-      case "S":
+      case settingsShortcut.toLowerCase():
+      case settingsShortcut.toUpperCase():
         // Settings shortcut (only if not typing in a field)
-        if (!event.ctrlKey) {
-          // Avoid triggering with Ctrl+S (save)
+        if (!event.ctrlKey && settingsShortcut) { // Avoid triggering with Ctrl+S (save)
           event.preventDefault();
           openSettingsModal();
         }
         break;
-      case "Control":
+      case logoutShortcut:
         // Logout shortcut
-        // Note: Using just Ctrl as a shortcut is not ideal since it's used in many combinations
-        // But implementing as requested
-        if (confirm("Are you sure you want to log out?")) {
+        if (logoutShortcut && confirm("Are you sure you want to log out?")) {
           // Clear cache before logout
           mediaCache = {};
           window.api.logout();
         }
         break;
-      case "1":
+      case filterAllShortcut:
         // Filter: All
-        applyFilter("all");
+        if (filterAllShortcut) applyFilter("all");
         break;
-      case "2":
+      case filterImagesShortcut:
         // Filter: Images
-        applyFilter("image");
+        if (filterImagesShortcut) applyFilter("image");
         break;
-      case "3":
+      case filterVideosShortcut:
         // Filter: Videos
-        applyFilter("video");
+        if (filterVideosShortcut) applyFilter("video");
         break;
     }
   };
 
   // Update button labels to show keyboard shortcuts
   const updateButtonLabels = () => {
-    if (importBtn) {
-      const originalText = importBtn.textContent || "Import Media";
-      const shortcutSpan = document.createElement("span");
-      shortcutSpan.className = "shortcut-hint";
-      shortcutSpan.textContent = "F1";
+    // Get saved shortcuts from localStorage or use defaults
+    const savedShortcuts = JSON.parse(localStorage.getItem("customShortcuts")) || {};
+    
+    const importShortcut = savedShortcuts.import === "" ? null : (savedShortcuts.import || "F1");
+    const createFolderShortcut = savedShortcuts.createFolder === "" ? null : (savedShortcuts.createFolder || "F2");
+    const selectItemsShortcut = savedShortcuts.selectItems === "" ? null : (savedShortcuts.selectItems || "F3");
+    const settingsShortcut = savedShortcuts.settings === "" ? null : (savedShortcuts.settings || "S");
+    const logoutShortcut = savedShortcuts.logout === "" ? null : (savedShortcuts.logout || "Control");
+    const filterAllShortcut = savedShortcuts.filterAll === "" ? null : (savedShortcuts.filterAll || "1");
+    const filterImagesShortcut = savedShortcuts.filterImages === "" ? null : (savedShortcuts.filterImages || "2");
+    const filterVideosShortcut = savedShortcuts.filterVideos === "" ? null : (savedShortcuts.filterVideos || "3");
 
-      importBtn.innerHTML = ""; // Clear existing content
-      importBtn.appendChild(document.createTextNode(originalText));
-      importBtn.appendChild(document.createTextNode(" "));
-      importBtn.appendChild(shortcutSpan);
+    if (importBtn) {
+      // Clear any existing content
+      importBtn.innerHTML = "";
+      
+      // Add the text
+      importBtn.appendChild(document.createTextNode("Import Media"));
+      
+      // Add shortcut hint if available AND enabled
+      if (importShortcut) {
+        const shortcutSpan = document.createElement("span");
+        shortcutSpan.className = "shortcut-hint";
+        shortcutSpan.textContent = importShortcut;
+        importBtn.appendChild(document.createTextNode(" "));
+        importBtn.appendChild(shortcutSpan);
+      }
     }
 
     if (createFolderBtn) {
-      const originalText = createFolderBtn.textContent || "Create Folder";
-      const shortcutSpan = document.createElement("span");
-      shortcutSpan.className = "shortcut-hint";
-      shortcutSpan.textContent = "F2";
-
-      createFolderBtn.innerHTML = ""; // Clear existing content
-      createFolderBtn.appendChild(document.createTextNode(originalText));
-      createFolderBtn.appendChild(document.createTextNode(" "));
-      createFolderBtn.appendChild(shortcutSpan);
+      // Clear any existing content
+      createFolderBtn.innerHTML = "";
+      
+      // Add the text
+      createFolderBtn.appendChild(document.createTextNode("Create Folder"));
+      
+      // Add shortcut hint if available AND enabled
+      if (createFolderShortcut) {
+        const shortcutSpan = document.createElement("span");
+        shortcutSpan.className = "shortcut-hint";
+        shortcutSpan.textContent = createFolderShortcut;
+        createFolderBtn.appendChild(document.createTextNode(" "));
+        createFolderBtn.appendChild(shortcutSpan);
+      }
     }
 
     if (selectModeBtn) {
-      const originalText = selectModeBtn.textContent || "Select Items";
-      const shortcutSpan = document.createElement("span");
-      shortcutSpan.className = "shortcut-hint";
-      shortcutSpan.textContent = "F3";
-
-      selectModeBtn.innerHTML = ""; // Clear existing content
-      selectModeBtn.appendChild(document.createTextNode(originalText));
-      selectModeBtn.appendChild(document.createTextNode(" "));
-      selectModeBtn.appendChild(shortcutSpan);
+      // Preserve the current text which may be "Cancel Selection" or "Select Items"
+      const currentText = selectModeBtn.textContent.replace(/\s+[A-Z0-9]+$/, "").trim();
+      
+      // Clear any existing content
+      selectModeBtn.innerHTML = "";
+      
+      // Add the current text back
+      selectModeBtn.appendChild(document.createTextNode(currentText));
+      
+      // Add shortcut hint if available AND enabled
+      if (selectItemsShortcut) {
+        const shortcutSpan = document.createElement("span");
+        shortcutSpan.className = "shortcut-hint";
+        shortcutSpan.textContent = selectItemsShortcut;
+        selectModeBtn.appendChild(document.createTextNode(" "));
+        selectModeBtn.appendChild(shortcutSpan);
+      }
     }
 
     if (logoutBtn) {
-      const originalText = logoutBtn.textContent || "Logout";
-      const shortcutSpan = document.createElement("span");
-      shortcutSpan.className = "shortcut-hint";
-      shortcutSpan.textContent = "Ctrl";
-
-      logoutBtn.innerHTML = ""; // Clear existing content
-      logoutBtn.appendChild(document.createTextNode(originalText));
-      logoutBtn.appendChild(document.createTextNode(" "));
-      logoutBtn.appendChild(shortcutSpan);
+      // Clear any existing content
+      logoutBtn.innerHTML = "";
+      
+      // Add the text
+      logoutBtn.appendChild(document.createTextNode("Logout"));
+      
+      // Add shortcut hint if available AND enabled
+      if (logoutShortcut) {
+        const shortcutSpan = document.createElement("span");
+        shortcutSpan.className = "shortcut-hint";
+        shortcutSpan.textContent = logoutShortcut;
+        logoutBtn.appendChild(document.createTextNode(" "));
+        logoutBtn.appendChild(shortcutSpan);
+      }
     }
 
     // Add shortcut hints to filter buttons
     if (viewAllBtn) {
-      const originalText = viewAllBtn.textContent || "All";
-      const shortcutSpan = document.createElement("span");
-      shortcutSpan.className = "shortcut-hint";
-      shortcutSpan.textContent = "1";
-
-      viewAllBtn.innerHTML = ""; // Clear existing content
-      viewAllBtn.appendChild(document.createTextNode(originalText));
-      viewAllBtn.appendChild(document.createTextNode(" "));
-      viewAllBtn.appendChild(shortcutSpan);
+      // Clear any existing content
+      viewAllBtn.innerHTML = "";
+      
+      // Add the text
+      viewAllBtn.appendChild(document.createTextNode("All"));
+      
+      // Add shortcut hint if available AND enabled
+      if (filterAllShortcut) {
+        const shortcutSpan = document.createElement("span");
+        shortcutSpan.className = "shortcut-hint";
+        shortcutSpan.textContent = filterAllShortcut;
+        viewAllBtn.appendChild(document.createTextNode(" "));
+        viewAllBtn.appendChild(shortcutSpan);
+      }
     }
 
     if (viewImagesBtn) {
-      const originalText = viewImagesBtn.textContent || "Images";
-      const shortcutSpan = document.createElement("span");
-      shortcutSpan.className = "shortcut-hint";
-      shortcutSpan.textContent = "2";
-
-      viewImagesBtn.innerHTML = ""; // Clear existing content
-      viewImagesBtn.appendChild(document.createTextNode(originalText));
-      viewImagesBtn.appendChild(document.createTextNode(" "));
-      viewImagesBtn.appendChild(shortcutSpan);
+      // Clear any existing content
+      viewImagesBtn.innerHTML = "";
+      
+      // Add the text
+      viewImagesBtn.appendChild(document.createTextNode("Images"));
+      
+      // Add shortcut hint if available AND enabled
+      if (filterImagesShortcut) {
+        const shortcutSpan = document.createElement("span");
+        shortcutSpan.className = "shortcut-hint";
+        shortcutSpan.textContent = filterImagesShortcut;
+        viewImagesBtn.appendChild(document.createTextNode(" "));
+        viewImagesBtn.appendChild(shortcutSpan);
+      }
     }
 
     if (viewVideosBtn) {
-      const originalText = viewVideosBtn.textContent || "Videos";
-      const shortcutSpan = document.createElement("span");
-      shortcutSpan.className = "shortcut-hint";
-      shortcutSpan.textContent = "3";
-
-      viewVideosBtn.innerHTML = ""; // Clear existing content
-      viewVideosBtn.appendChild(document.createTextNode(originalText));
-      viewVideosBtn.appendChild(document.createTextNode(" "));
-      viewVideosBtn.appendChild(shortcutSpan);
+      // Clear any existing content
+      viewVideosBtn.innerHTML = "";
+      
+      // Add the text
+      viewVideosBtn.appendChild(document.createTextNode("Videos"));
+      
+      // Add shortcut hint if available AND enabled
+      if (filterVideosShortcut) {
+        const shortcutSpan = document.createElement("span");
+        shortcutSpan.className = "shortcut-hint";
+        shortcutSpan.textContent = filterVideosShortcut;
+        viewVideosBtn.appendChild(document.createTextNode(" "));
+        viewVideosBtn.appendChild(shortcutSpan);
+      }
     }
   };
 

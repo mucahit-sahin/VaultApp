@@ -1195,3 +1195,82 @@ body.selection-mode .folder-item {
 .danger-btn:hover {
   background-color: rgb(200, 35, 51);
 }
+
+/* Shortcuts section in settings */
+.shortcuts-section {
+  margin-top: 25px;
+  padding-top: 15px;
+  border-top: 1px solid var(--border-color);
+}
+
+.shortcuts-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 15px;
+}
+
+.shortcuts-table th {
+  text-align: left;
+  font-weight: 600;
+  font-size: 14px;
+  padding: 8px;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-primary);
+}
+
+.shortcuts-table td {
+  padding: 8px;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-primary);
+  vertical-align: middle;
+}
+
+.shortcut-controls {
+  min-width: 180px;
+}
+
+.controls-flex-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.shortcut-input {
+  width: 80px;
+  padding: 5px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: 13px;
+  flex: 1;
+}
+
+.shortcut-enable {
+  cursor: pointer;
+  margin: 0;
+  flex-shrink: 0;
+}
+
+.shortcut-input:disabled {
+  opacity: 0.5;
+  background-color: var(--bg-primary);
+}
+
+.reset-shortcut-btn {
+  background-color: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  border-radius: 4px;
+  padding: 5px 8px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.reset-shortcut-btn:hover {
+  background-color: var(--secondary-btn-bg);
+  color: var(--text-primary);
+}
