@@ -613,9 +613,9 @@ document.addEventListener("DOMContentLoaded", () => {
     settingsForm.appendChild(intervalGroup);
     settingsForm.appendChild(vaultPathGroup);
     settingsForm.appendChild(shortcutsGroup);
+    settingsForm.appendChild(formActions);
     settingsForm.appendChild(deleteDataGroup);
     settingsForm.appendChild(githubGroup);
-    settingsForm.appendChild(formActions);
 
     // Assemble modal content
     modalContent.appendChild(closeSettingsModal);
